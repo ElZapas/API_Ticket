@@ -1,4 +1,6 @@
-- Cosas a tomar en cuenta
+############################
+COSAS A TOMAR EN CUENTA
+############################
 
 1. Composer: para descargar dependencias y como instalar el paquete para implementar JWT
 
@@ -19,9 +21,9 @@ Para endpoints protegidos (necesario header Authorization):
 2. CODIGO PARA ACEPTAR EL METODO 'PUT' EN PHP: (sera necesario a futuro)
 (para el que va a ver lo del API)
 
-if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
-    parse_str(file_get_contents("php://input"),$put_vars);
-    echo $put_vars['foo'];
-}
+ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+     parse_str(file_get_contents("php://input"),$put_vars);
+     echo $put_vars['foo'];
+ }
 
 
