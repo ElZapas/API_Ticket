@@ -10,7 +10,8 @@ use Firebase\JWT\Key;
 // Definimos una clave secreta para firmar y verificar tokens JWT.
 // Esta clave es crucial para la seguridad del sistema y debe mantenerse segura.
 // En producción, se recomienda almacenarla en una variable de entorno en lugar de en el código.
-$key = 'clave-secreta-para-jwt';
+// Obtiene la clave secreta desde las variables de entorno de Railway
+$key = getenv('JWT_SECRET_KEY');
 
 // Función para registrar un nuevo usuario en la base de datos.
 function register() {
