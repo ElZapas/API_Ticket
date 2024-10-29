@@ -1,7 +1,11 @@
 <?php
+require 'vendor/autoload.php';
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->load();
 // Requiere los archivos de conexión a la base de datos y controladores de autenticación
 require 'db.php';
 require 'authController.php';
+echo $_ENV["DB_USER"] ?? 'Sin usuario';
 
 // Configura la respuesta como JSON
 header('Content-Type: application/json');

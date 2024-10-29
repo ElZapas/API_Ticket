@@ -1,9 +1,9 @@
 <?php
 // Configuración de la conexión a la base de datos usando getenv para obtener los valores de las variables de entorno
-$host = getenv('DB_HOST'); // Dirección del servidor de base de datos
-$db = getenv('DB_NAME'); // Nombre de la base de datos
-$user = getenv('DB_USER'); // Usuario de la base de datos
-$pass = getenv('DB_PASSWORD'); // Contraseña de la base de datos
+$host = $_ENV['DB_HOST']; // Dirección del servidor de base de datos
+$db = $_ENV['DB_NAME']; // Nombre de la base de datos
+$user = $_ENV['DB_USER']; // Usuario de la base de datos
+$pass = $_ENV['DB_PASSWORD']; // Contraseña de la base de datos
 $charset = 'utf8mb4'; // Conjunto de caracteres
 
 // Definición del DSN (Data Source Name) para la conexión

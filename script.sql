@@ -1,6 +1,7 @@
 CREATE TABLE Usuarios (
     id_usuario INT AUTO_INCREMENT PRIMARY KEY,
     nombre_usuario VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
     puesto VARCHAR(100),
     fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
