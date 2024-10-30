@@ -1,20 +1,22 @@
 <?php
 require 'vendor/autoload.php';
-if (file_exists(__DIR__ . '/.env')) {
+
+// Cargar variables de entorno solo si existe el archivo .env
+if (file_exists(__DIR__ .'/.env')) {
     $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
     $dotenv->load();
 }
-// Requiere los archivos de conexión a la base de datos y controladores de autenticación
-require 'db.php';
-require 'authController.php';
-echo $_ENV["DB_USER"] ?? 'Sin usuario';
 
 // Configura la respuesta como JSON
 header('Content-Type: application/json');
 
+// Requiere los archivos de conexión a la base de datos y controladores de autenticación
+require 'db.php';
+require 'authController.php';
+
 // Obtener la ruta solicitada y el método HTTP
-$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$method = $_SERVER['REQUEST_METHOD'];
+$uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
 // Rutas y controladores asociados
 if ($uri == '/auth/register' && $method == 'POST') {
@@ -31,4 +33,3 @@ if ($uri == '/auth/register' && $method == 'POST') {
     http_response_code(404);
     echo json_encode(['error' => 'Not Found']);
 }
-
