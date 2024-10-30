@@ -15,7 +15,7 @@ require 'db.php';
 require 'authController.php';
 
 // Obtener la ruta solicitada y el método HTTP
-$uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+$uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH); //verificar que es lo que contiene eso
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
 // Rutas y controladores asociados
@@ -31,5 +31,12 @@ if ($uri == '/auth/register' && $method == 'POST') {
 } else {
     // Devuelve un código de error 404 si la ruta no coincide con las anteriores
     http_response_code(404);
-    echo json_encode(['error' => 'Not Found']);
+    echo json_encode(['error' => 'Not Found',
+    'JWT_SECRET_KEY' => getenv('JWT_SECRET_KEY'),
+        'DB_USER' => getenv('DB_USER'),
+        'DB_PASSWORD' => getenv('DB_PASSWORD'),
+        'DB_HOST' => getenv('DB_HOST'),
+        'DB_NAME' => getenv('DB_NAME'),
+        'REQUEST_URI' => $_SERVER['REQUEST_URI'],
+]); // hacer un console log con las variables de entorno
 }
