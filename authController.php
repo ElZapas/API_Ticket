@@ -20,8 +20,8 @@ function register() {
     // Leemos el cuerpo de la solicitud, que contiene los datos enviados por el cliente en formato JSON.
     $data = json_decode(file_get_contents('php://input'), true);
 
-    // Verificamos si los datos necesarios ('name', 'email' y 'password') están presentes en la solicitud.
-    if (!isset($data['name'], $data['email'], $data['password'])) {
+    // Verificamos si los datos necesarios ('nombreUsuario', 'email' y 'password') están presentes en la solicitud.
+    if (!isset($data['nombreUsuario'], $data['email'], $data['password'])) {
         // Si falta alguno de los datos obligatorios, enviamos un código de error 400 (Bad Request).
         http_response_code(400);
         echo json_encode(['error' => 'Faltan campos obligatorios']);
@@ -44,13 +44,13 @@ function register() {
 
     // Insertamos el nuevo usuario en la base de datos con su nombre, email, puesto, fecha de creación y contraseña encriptada.
     $stmt = $pdo->prepare('INSERT INTO Usuarios (nombre_usuario, email, puesto, fecha_creacion, password) VALUES (?, ?, "empleado", NOW(), ?)');
-    $stmt->execute([$data['name'], $data['email'], $hashedPassword]);
+    $stmt->execute([$data['nombreUsuario'], $data['email'], $hashedPassword]);
 
     // Obtenemos el ID del usuario recién creado, que nos devuelve PDO después de la inserción.
     $userId = $pdo->lastInsertId();
 
     // Recuperamos los datos del usuario recién creado para devolverlos en la respuesta, sin incluir la contraseña.
-    $stmt = $pdo->prepare('SELECT id_usuario AS id, nombre_usuario AS name, email, fecha_creacion AS createdAt FROM Usuarios WHERE id_usuario = ?');
+    $stmt = $pdo->prepare('SELECT id_usuario AS idUsuario, nombre_usuario AS nombreUsuario, email, fecha_creacion AS fechaCreacion FROM Usuarios WHERE id_usuario = ?');
     $stmt->execute([$userId]);
     $user = $stmt->fetch();
 
@@ -95,9 +95,9 @@ function login() {
     $payload = [
         'iat' => $issuedAt,                // 'iat' es la hora de creación (issued at).
         'exp' => $expirationTime,          // 'exp' es la hora de expiración (expiration time).
-        'data' => [                        // Datos del usuario que queremos incluir en el token.
-            'id' => $user['id_usuario'],   // ID único del usuario.
-            'name' => $user['nombre_usuario'], // Nombre del usuario.
+        'user' => [                        // Datos del USUARIO que queremos incluir en el token.
+            'idUsuario' => $user['id_usuario'],   // ID único del usuario.
+            'nombreUsuario' => $user['nombre_usuario'], // Nombre del usuario.
             'email' => $user['email']      // Correo electrónico del usuario.
         ]
     ];
@@ -109,8 +109,8 @@ function login() {
     echo json_encode([
         'token' => $jwt,
         'user' => [
-            'id' => $user['id_usuario'],
-            'name' => $user['nombre_usuario'],
+            'idUsuario' => $user['id_usuario'],
+            'nombreUsuario' => $user['nombre_usuario'],
             'email' => $user['email']
         ]
     ]);
@@ -156,8 +156,8 @@ function obtenerDatosProtegidos() {
     }
 
     // Realizamos una consulta SQL para obtener los datos del usuario en la base de datos usando su ID.
-    $stmt = $pdo->prepare('SELECT id_usuario AS id, nombre_usuario AS name, email, fecha_creacion AS createdAt FROM Usuarios WHERE id_usuario = ?');
-    $stmt->execute([$userData['id']]);
+    $stmt = $pdo->prepare('SELECT id_usuario AS idUsuario, nombre_usuario AS nombreUsuario, email, fecha_creacion AS fechaCreacion FROM Usuarios WHERE id_usuario = ?');
+    $stmt->execute([$userData['idUsuario']]);
     $user = $stmt->fetch();
 
     // Si no encontramos al usuario asociado, enviamos un error 404 (Not Found).
