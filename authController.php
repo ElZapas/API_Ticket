@@ -29,7 +29,7 @@ function register() {
     }
 
     // Verificamos si ya existe un usuario registrado con el mismo correo electrónico en la base de datos.
-    $stmt = $pdo->prepare('SELECT id_usuario FROM usuarios WHERE email = ?');
+    $stmt = $pdo->prepare('SELECT id_usuario FROM Usuarios WHERE email = ?');
     $stmt->execute([$data['email']]);
     if ($stmt->fetch()) {
         // Si el correo ya está registrado, enviamos un código de error 409 (Conflict).
@@ -43,14 +43,14 @@ function register() {
     $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
 
     // Insertamos el nuevo usuario en la base de datos con su nombre, email, puesto, fecha de creación y contraseña encriptada.
-    $stmt = $pdo->prepare('INSERT INTO usuarios (nombre_usuario, email, puesto, fecha_creacion, password) VALUES (?, ?, "empleado", NOW(), ?)');
+    $stmt = $pdo->prepare('INSERT INTO Usuarios (nombre_usuario, email, puesto, fecha_creacion, password) VALUES (?, ?, "empleado", NOW(), ?)');
     $stmt->execute([$data['name'], $data['email'], $hashedPassword]);
 
     // Obtenemos el ID del usuario recién creado, que nos devuelve PDO después de la inserción.
     $userId = $pdo->lastInsertId();
 
     // Recuperamos los datos del usuario recién creado para devolverlos en la respuesta, sin incluir la contraseña.
-    $stmt = $pdo->prepare('SELECT id_usuario AS id, nombre_usuario AS name, email, fecha_creacion AS createdAt FROM usuarios WHERE id_usuario = ?');
+    $stmt = $pdo->prepare('SELECT id_usuario AS id, nombre_usuario AS name, email, fecha_creacion AS createdAt FROM Usuarios WHERE id_usuario = ?');
     $stmt->execute([$userId]);
     $user = $stmt->fetch();
 
@@ -76,7 +76,7 @@ function login() {
     }
 
     // Buscamos al usuario en la base de datos usando el email proporcionado.
-    $stmt = $pdo->prepare('SELECT id_usuario, nombre_usuario, email, password FROM usuarios WHERE email = ?');
+    $stmt = $pdo->prepare('SELECT id_usuario, nombre_usuario, email, password FROM Usuarios WHERE email = ?');
     $stmt->execute([$data['email']]);
     $user = $stmt->fetch();
 
@@ -156,7 +156,7 @@ function obtenerDatosProtegidos() {
     }
 
     // Realizamos una consulta SQL para obtener los datos del usuario en la base de datos usando su ID.
-    $stmt = $pdo->prepare('SELECT id_usuario AS id, nombre_usuario AS name, email, fecha_creacion AS createdAt FROM usuarios WHERE id_usuario = ?');
+    $stmt = $pdo->prepare('SELECT id_usuario AS id, nombre_usuario AS name, email, fecha_creacion AS createdAt FROM Usuarios WHERE id_usuario = ?');
     $stmt->execute([$userData['id']]);
     $user = $stmt->fetch();
 
