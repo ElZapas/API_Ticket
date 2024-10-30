@@ -61,6 +61,8 @@ function register() {
 
 // Función para realizar el login y generar un token de sesión JWT.
 function login() {
+    error_log("Login function called");
+    
     global $pdo, $key; // Accedemos al objeto PDO y a la clave secreta para JWT.
 
     // Decodificamos el cuerpo de la solicitud para obtener los datos enviados por el cliente.

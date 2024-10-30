@@ -1,4 +1,9 @@
 <?php
+// Habilitar la visualización de errores para facilitar la depuración
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 require 'vendor/autoload.php';
 
 // Cargar variables de entorno solo si existe el archivo .env
