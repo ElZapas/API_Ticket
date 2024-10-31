@@ -7,7 +7,7 @@ error_reporting(E_ALL);
 require 'vendor/autoload.php';
 
 // Cargar variables de entorno solo si existe el archivo .env
-if (file_exists(__DIR__ .'/.env')) {
+if (file_exists(__DIR__ . '/.env')) {
     $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
     $dotenv->load();
 }
@@ -36,12 +36,7 @@ if ($uri == '/auth/register' && $method == 'POST') {
 } else {
     // Devuelve un código de error 404 si la ruta no coincide con las anteriores
     http_response_code(404);
-    echo json_encode(['error' => 'Not Found',
-    'JWT_SECRET_KEY' => getenv('JWT_SECRET_KEY'),
-        'DB_USER' => getenv('DB_USER'),
-        'DB_PASSWORD' => getenv('DB_PASSWORD'),
-        'DB_HOST' => getenv('DB_HOST'),
-        'DB_NAME' => getenv('DB_NAME'),
-        'REQUEST_URI' => $_SERVER['REQUEST_URI'],
-]); // hacer un console log con las variables de entorno
+    echo json_encode([
+        'error' => 'Not Found'
+    ]); // hacer un console log con las variables de entorno
 }
