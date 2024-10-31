@@ -14,6 +14,10 @@ if (file_exists(__DIR__ . '/.env')) {
 
 // Configura la respuesta como JSON
 header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header("Access-Control-Allow-Headers: X-API-KEY, Origin, X-Requested-With, Content-Type, Accept, Access-Control-Request-Method");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE");
+header("Allow: GET, POST, OPTIONS, PUT, DELETE");
 
 // Requiere los archivos de conexión a la base de datos y controladores de autenticación
 require 'db.php';
