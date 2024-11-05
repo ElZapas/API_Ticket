@@ -14,25 +14,17 @@ use Firebase\JWT\Key;
 $key = $_ENV['JWT_SECRET_KEY'];
 
 // Función para registrar un nuevo usuario en la base de datos.
-function register()
-{
+function register() {
     global $pdo; // Accedemos al objeto PDO para interactuar con la base de datos.
 
     // Leemos el cuerpo de la solicitud, que contiene los datos enviados por el cliente en formato JSON.
     $data = json_decode(file_get_contents('php://input'), true);
 
-    // Verificamos si los datos necesarios ('nombreUsuario', 'email', 'password' y 'puesto') están presentes en la solicitud.
-    if (!isset($data['nombreUsuario'], $data['email'], $data['password'], $data['puesto'])) {
+    // Verificamos si los datos necesarios ('nombreUsuario', 'email' y 'password') están presentes en la solicitud.
+    if (!isset($data['nombreUsuario'], $data['email'], $data['password'])) {
         // Si falta alguno de los datos obligatorios, enviamos un código de error 400 (Bad Request).
-        http_response_code(response_code: 400);
-        echo json_encode(['error' => 'Faltan campos obligatorios']);
-        return;
-    }
-
-    // Validamos que el valor de 'puesto' sea "responsable" o "tecnico".
-    if (!in_array($data['puesto'], ['responsable', 'tecnico'])) {
         http_response_code(400);
-        echo json_encode(['error' => 'El campo puesto debe ser "responsable" o "tecnico"']);
+        echo json_encode(['error' => 'Faltan campos obligatorios']);
         return;
     }
 
@@ -51,14 +43,14 @@ function register()
     $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
 
     // Insertamos el nuevo usuario en la base de datos con su nombre, email, puesto, fecha de creación y contraseña encriptada.
-    $stmt = $pdo->prepare('INSERT INTO Usuarios (nombre_usuario, email, puesto, fecha_creacion, password) VALUES (?, ?, ?, NOW(), ?)');
-    $stmt->execute([$data['nombreUsuario'], $data['email'], $data['puesto'], $hashedPassword]);
+    $stmt = $pdo->prepare('INSERT INTO Usuarios (nombre_usuario, email, puesto, fecha_creacion, password) VALUES (?, ?, "empleado", NOW(), ?)');
+    $stmt->execute([$data['nombreUsuario'], $data['email'], $hashedPassword]);
 
     // Obtenemos el ID del usuario recién creado, que nos devuelve PDO después de la inserción.
     $userId = $pdo->lastInsertId();
 
     // Recuperamos los datos del usuario recién creado para devolverlos en la respuesta, sin incluir la contraseña.
-    $stmt = $pdo->prepare('SELECT id_usuario AS idUsuario, nombre_usuario AS nombreUsuario, email, puesto, fecha_creacion AS fechaCreacion FROM Usuarios WHERE id_usuario = ?');
+    $stmt = $pdo->prepare('SELECT id_usuario AS idUsuario, nombre_usuario AS nombreUsuario, email, fecha_creacion AS fechaCreacion FROM Usuarios WHERE id_usuario = ?');
     $stmt->execute([$userId]);
     $user = $stmt->fetch();
 
@@ -68,10 +60,9 @@ function register()
 }
 
 // Función para realizar el login y generar un token de sesión JWT.
-function login()
-{
+function login() {
     error_log("Login function called");
-
+    
     global $pdo, $key; // Accedemos al objeto PDO y a la clave secreta para JWT.
 
     // Decodificamos el cuerpo de la solicitud para obtener los datos enviados por el cliente.
@@ -85,7 +76,7 @@ function login()
     }
 
     // Buscamos al usuario en la base de datos usando el email proporcionado.
-    $stmt = $pdo->prepare('SELECT id_usuario, nombre_usuario, email, puesto, password FROM Usuarios WHERE email = ?');
+    $stmt = $pdo->prepare('SELECT id_usuario, nombre_usuario, email, password FROM Usuarios WHERE email = ?');
     $stmt->execute([$data['email']]);
     $user = $stmt->fetch();
 
@@ -107,8 +98,7 @@ function login()
         'user' => [                        // Datos del USUARIO que queremos incluir en el token.
             'idUsuario' => $user['id_usuario'],   // ID único del usuario.
             'nombreUsuario' => $user['nombre_usuario'], // Nombre del usuario.
-            'email' => $user['email'],       // Correo electrónico del usuario.
-            'puesto' => $user['puesto']     // Tipo de puesto en el usuario.
+            'email' => $user['email']      // Correo electrónico del usuario.
         ]
     ];
 
@@ -121,15 +111,13 @@ function login()
         'user' => [
             'idUsuario' => $user['id_usuario'],
             'nombreUsuario' => $user['nombre_usuario'],
-            'email' => $user['email'], 
-            'puesto' => $user['puesto'], 
+            'email' => $user['email']
         ]
     ]);
 }
 
 // Función para verificar la validez del token JWT recibido en el header de la solicitud.
-function verificarToken($jwt)
-{
+function verificarToken($jwt) {
     global $key; // Incluimos la clave secreta para JWT.
 
     try {
@@ -143,8 +131,7 @@ function verificarToken($jwt)
 }
 
 // Función para obtener datos de usuario protegido por autenticación JWT
-function obtenerDatosProtegidos()
-{
+function obtenerDatosProtegidos() {
     global $pdo; // Accedemos al objeto PDO para interactuar con la base de datos.
 
     // Obtenemos todos los headers de la solicitud, donde esperamos encontrar el token de autenticación.
@@ -169,7 +156,7 @@ function obtenerDatosProtegidos()
     }
 
     // Realizamos una consulta SQL para obtener los datos del usuario en la base de datos usando su ID.
-    $stmt = $pdo->prepare('SELECT id_usuario AS idUsuario, nombre_usuario AS nombreUsuario, email, puesto, fecha_creacion AS fechaCreacion FROM Usuarios WHERE id_usuario = ?');
+    $stmt = $pdo->prepare('SELECT id_usuario AS idUsuario, nombre_usuario AS nombreUsuario, email, fecha_creacion AS fechaCreacion FROM Usuarios WHERE id_usuario = ?');
     $stmt->execute([$userData['idUsuario']]);
     $user = $stmt->fetch();
 
@@ -182,36 +169,4 @@ function obtenerDatosProtegidos()
 
     // Si todo está bien, devolvemos los datos del usuario en formato JSON.
     echo json_encode($user);
-}
-
-function eliminarUsuario($id)
-{
-    global $pdo; // Accedemos al objeto PDO para interactuar con la base de datos.
-
-    // Comprobamos si el ID del usuario a eliminar es un número válido.
-    if (!is_numeric($id)) {
-        http_response_code(400); // Código 400 para petición incorrecta.
-        echo json_encode(['error' => 'ID de usuario inválido']);
-        return;
-    }
-
-    // Preparamos la consulta para eliminar al usuario.
-    $stmt = $pdo->prepare('DELETE FROM Usuarios WHERE id_usuario = ?');
-    
-    // Ejecutamos la consulta con el ID proporcionado.
-    if ($stmt->execute([$id])) {
-        // Verificamos si se eliminó algún registro.
-        if ($stmt->rowCount() > 0) {
-            http_response_code(204); // Código 204 No Content si se eliminó el usuario correctamente.
-            return;
-        } else {
-            http_response_code(404); // Código 404 si no se encontró al usuario.
-            echo json_encode(['error' => 'Usuario no encontrado']);
-            return;
-        }
-    } else {
-        http_response_code(500); // Código 500 para error interno del servidor.
-        echo json_encode(['error' => 'Error al eliminar el usuario']);
-        return;
-    }
 }
