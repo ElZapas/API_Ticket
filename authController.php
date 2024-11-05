@@ -128,7 +128,7 @@ function login()
 }
 
 // Función para verificar la validez del token JWT recibido en el header de la solicitud.
-function verificarToken($jwt)
+function verificarTokenUser($jwt)
 {
     global $key; // Incluimos la clave secreta para JWT.
 
@@ -160,7 +160,7 @@ function obtenerDatosProtegidos()
     $token = str_replace('Bearer ', '', $headers['Authorization']);
 
     // Verificamos el token decodificándolo y obteniendo los datos del usuario.
-    $userData = verificarToken($token);
+    $userData = verificarTokenUser($token);
     if (!$userData) {
         // Si el token es inválido o ha expirado, devolvemos un código 401.
         http_response_code(401);

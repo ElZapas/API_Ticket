@@ -8,7 +8,7 @@ use Firebase\JWT\Key;
 $key = $_ENV['JWT_SECRET_KEY'];
 
 // Función para verificar el token JWT y obtener los datos del usuario
-function verificarToken($jwt)
+function verificarTokenTicket($jwt)
 {
     global $key;
     try {
@@ -34,7 +34,7 @@ function obtenerTickets()
 
     // Extraer el token del header 'Authorization'
     $token = str_replace('Bearer ', '', $headers['Authorization']);
-    $userData = verificarToken($token);
+    $userData = verificarTokenTicket($token);
 
     if (!$userData) {
         http_response_code(401);
