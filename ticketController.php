@@ -29,11 +29,27 @@ function obtenerTickets()
         return;
     }
 
-    // Generar la consulta SQL para obtener los tickets
-    $query = "SELECT id_ticket AS idTicket, id_cliente AS idCliente, id_usuario AS idUsuario, descripcion, fecha_recepcion AS fechaRecepcion, estado, prioridad, canal_recepcion AS canalRecepcion, fecha_resolucion AS fechaResolucion FROM Tickets";
+    // Generar la consulta SQL para obtener los tickets con el nombre del usuario
+    $query = "
+        SELECT 
+            t.id_ticket AS idTicket,
+            t.id_cliente AS idCliente,
+            u.nombre_usuario AS nombreUsuario,
+            t.descripcion,
+            t.fecha_recepcion AS fechaRecepcion,
+            t.estado,
+            t.prioridad,
+            t.canal_recepcion AS canalRecepcion,
+            t.fecha_resolucion AS fechaResolucion
+        FROM Tickets t
+        JOIN Usuarios u ON t.id_usuario = u.id_usuario
+    ";
+
+    // Condicional para mostrar solo los tickets asignados al técnico o todos si es responsable
     if ($userData['puesto'] === 'tecnico') {
-        $query .= " WHERE id_usuario = ?";
+        $query .= " WHERE t.id_usuario = ?";
     }
+
     $query .= " LIMIT 20";
 
     $stmt = $pdo->prepare($query);
