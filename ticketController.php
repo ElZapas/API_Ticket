@@ -11,7 +11,6 @@ function obtenerTickets()
 {
     global $pdo;
 
-    // Obtener el token desde los headers
     $headers = apache_request_headers();
     if (!isset($headers['Authorization'])) {
         http_response_code(401);
@@ -19,7 +18,6 @@ function obtenerTickets()
         return;
     }
 
-    // Extraer el token del header 'Authorization'
     $token = str_replace('Bearer ', '', $headers['Authorization']);
     $userData = verificarTokenUser($token);
 
@@ -29,11 +27,10 @@ function obtenerTickets()
         return;
     }
 
-    // Generar la consulta SQL para obtener los tickets con el nombre del usuario
     $query = "
         SELECT 
             t.id_ticket AS idTicket,
-            t.id_cliente AS idCliente,
+            c.nombre_cliente AS nombreCliente,
             u.nombre_usuario AS nombreUsuario,
             t.descripcion,
             t.fecha_recepcion AS fechaRecepcion,
@@ -43,13 +40,12 @@ function obtenerTickets()
             t.fecha_resolucion AS fechaResolucion
         FROM Tickets t
         JOIN Usuarios u ON t.id_usuario = u.id_usuario
+        JOIN Clientes c ON t.id_cliente = c.id_cliente
     ";
 
-    // Condicional para mostrar solo los tickets asignados al técnico o todos si es responsable
     if ($userData['puesto'] === 'tecnico') {
         $query .= " WHERE t.id_usuario = ?";
     }
-
     $query .= " LIMIT 20";
 
     $stmt = $pdo->prepare($query);
@@ -61,14 +57,12 @@ function obtenerTickets()
 
     $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Verificar si hay tickets y devolver la respuesta
     if (!$tickets) {
         echo json_encode(['mensaje' => 'No se encontraron tickets registrados']);
     } else {
         echo json_encode($tickets);
     }
 }
-
 
 function agregarTicket()
 {
@@ -116,7 +110,24 @@ function agregarTicket()
 
     if ($stmt->rowCount() > 0) {
         $idTicket = $pdo->lastInsertId();
-        $stmt = $pdo->prepare("SELECT id_ticket as idTicket, id_cliente as idCliente, id_usuario as idUsuario, descripcion, fecha_recepcion as fechaRecepcion, estado, prioridad, canal_recepcion as canalRecepcion, fecha_resolucion as fechaResolucion FROM Tickets WHERE id_ticket = ?");
+        
+        // Obtener el ticket junto con el nombre del usuario y cliente
+        $stmt = $pdo->prepare("
+            SELECT 
+                t.id_ticket AS idTicket,
+                c.nombre_cliente AS nombreCliente,
+                u.nombre_usuario AS nombreUsuario,
+                t.descripcion,
+                t.fecha_recepcion AS fechaRecepcion,
+                t.estado,
+                t.prioridad,
+                t.canal_recepcion AS canalRecepcion,
+                t.fecha_resolucion AS fechaResolucion
+            FROM Tickets t
+            JOIN Usuarios u ON t.id_usuario = u.id_usuario
+            JOIN Clientes c ON t.id_cliente = c.id_cliente
+            WHERE t.id_ticket = ?
+        ");
         $stmt->execute([$idTicket]);
         $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
 
