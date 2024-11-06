@@ -60,41 +60,44 @@ function agregarTicket()
 
     $headers = apache_request_headers();
     if (!isset($headers['Authorization'])) {
-        // Si no se proporciona el token, devolvemos un código 401 (Unauthorized).
         http_response_code(401);
         echo json_encode(['error' => 'Token no proporcionado']);
         return;
     }
 
-    // Extraemos el token del header 'Authorization', eliminando el prefijo 'Bearer '.
     $token = str_replace('Bearer ', '', $headers['Authorization']);
-
     $userData = verificarTokenUser($token);
     if (!$userData) {
-        // Si el token es inválido o ha expirado, devolvemos un código 401.
         http_response_code(401);
         echo json_encode(['error' => 'Token inválido o expirado']);
         return;
     }
 
-    // Leer y decodificar JSON del cuerpo de la solicitud
     $data = json_decode(file_get_contents("php://input"), true);
 
-    // Validar datos requeridos
-    if (!isset($data['idCliente'], $userData['idUsuario'], $data['descripcion'], $data['prioridad'], $data['canalRecepcion'])) {
+    if (!isset($data['idCliente'], $data['nombreUsuario'], $data['descripcion'], $data['prioridad'], $data['canalRecepcion'])) {
         http_response_code(400);
         echo json_encode(['error' => 'Todos los campos son obligatorios']);
         return;
     }
 
-    // Preparar y ejecutar la consulta de inserción
+    // Obtener el id_usuario a partir del nombreUsuario
+    $stmt = $pdo->prepare("SELECT id_usuario FROM Usuarios WHERE nombre_usuario = ?");
+    $stmt->execute([$data['nombreUsuario']]);
+    $idUsuarioAsignado = $stmt->fetchColumn();
+
+    if (!$idUsuarioAsignado) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Usuario técnico no encontrado']);
+        return;
+    }
+
     $stmt = $pdo->prepare('INSERT INTO Tickets (id_cliente, id_usuario, descripcion, estado, prioridad, canal_recepcion, fecha_resolucion) VALUES (?, ?, ?, ?, ?, ?, ?)');
     $estado = TicketEstados::ABIERTO->value;
     $fechaResolucion = ($estado === TicketEstados::RESUELTO->value) ? date("Y-m-d H:i:s") : null;
 
-    $stmt->execute([$data['idCliente'], $userData['idUsuario'], $data['descripcion'], $estado, $data['prioridad'], $data['canalRecepcion'], $fechaResolucion]);
+    $stmt->execute([$data['idCliente'], $idUsuarioAsignado, $data['descripcion'], $estado, $data['prioridad'], $data['canalRecepcion'], $fechaResolucion]);
 
-    // Verificar si la inserción fue exitosa
     if ($stmt->rowCount() > 0) {
         $idTicket = $pdo->lastInsertId();
         $stmt = $pdo->prepare("SELECT id_ticket as idTicket, id_cliente as idCliente, id_usuario as idUsuario, descripcion, fecha_recepcion as fechaRecepcion, estado, prioridad, canal_recepcion as canalRecepcion, fecha_resolucion as fechaResolucion FROM Tickets WHERE id_ticket = ?");
