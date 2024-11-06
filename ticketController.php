@@ -85,9 +85,20 @@ function agregarTicket()
 
     $data = json_decode(file_get_contents("php://input"), true);
 
-    if (!isset($data['idCliente'], $data['nombreUsuario'], $data['descripcion'], $data['prioridad'], $data['canalRecepcion'])) {
+    if (!isset($data['nombreCliente'], $data['nombreUsuario'], $data['descripcion'], $data['prioridad'], $data['canalRecepcion'])) {
         http_response_code(400);
         echo json_encode(['error' => 'Todos los campos son obligatorios']);
+        return;
+    }
+
+    // Obtener el id_cliente a partir del nombreCliente
+    $stmt = $pdo->prepare("SELECT id_cliente FROM Clientes WHERE nombre_cliente = ?");
+    $stmt->execute([$data['nombreCliente']]);
+    $idCliente = $stmt->fetchColumn();
+
+    if (!$idCliente) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Cliente no encontrado']);
         return;
     }
 
@@ -102,16 +113,17 @@ function agregarTicket()
         return;
     }
 
+    // Registrar el ticket
     $stmt = $pdo->prepare('INSERT INTO Tickets (id_cliente, id_usuario, descripcion, estado, prioridad, canal_recepcion, fecha_resolucion) VALUES (?, ?, ?, ?, ?, ?, ?)');
     $estado = TicketEstados::ABIERTO->value;
     $fechaResolucion = ($estado === TicketEstados::RESUELTO->value) ? date("Y-m-d H:i:s") : null;
 
-    $stmt->execute([$data['idCliente'], $idUsuarioAsignado, $data['descripcion'], $estado, $data['prioridad'], $data['canalRecepcion'], $fechaResolucion]);
+    $stmt->execute([$idCliente, $idUsuarioAsignado, $data['descripcion'], $estado, $data['prioridad'], $data['canalRecepcion'], $fechaResolucion]);
 
     if ($stmt->rowCount() > 0) {
         $idTicket = $pdo->lastInsertId();
         
-        // Obtener el ticket junto con el nombre del usuario y cliente
+        // Obtener el ticket recién creado con nombres de usuario y cliente
         $stmt = $pdo->prepare("
             SELECT 
                 t.id_ticket AS idTicket,
@@ -137,6 +149,7 @@ function agregarTicket()
         echo json_encode(['error' => 'Error al crear el ticket']);
     }
 }
+
 
 function actualizarTicket($id)
 {
