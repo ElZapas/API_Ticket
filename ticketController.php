@@ -97,7 +97,7 @@ function agregarTicket()
     // Verificar si la inserción fue exitosa
     if ($stmt->rowCount() > 0) {
         $idTicket = $pdo->lastInsertId();
-        $stmt = $pdo->prepare("SELECT id_ticket as idTicket, id_cliente as idCliente, id_usuario as idUsuario, descripcion, fecha_recepcion as fechaRecepcion, estado, prioridad, canal_recepcion as canalRecepcion, fecha_resolucion as fechaResolucion FROM tickets WHERE id_ticket = ?");
+        $stmt = $pdo->prepare("SELECT id_ticket as idTicket, id_cliente as idCliente, id_usuario as idUsuario, descripcion, fecha_recepcion as fechaRecepcion, estado, prioridad, canal_recepcion as canalRecepcion, fecha_resolucion as fechaResolucion FROM Tickets WHERE id_ticket = ?");
         $stmt->execute([$idTicket]);
         $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
 
