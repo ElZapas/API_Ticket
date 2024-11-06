@@ -30,7 +30,7 @@ function obtenerTickets()
     }
 
     // Generar la consulta SQL para obtener los tickets
-    $query = "SELECT id_ticket AS idTicket, id_cliente AS idCliente, id_usuario AS idUsuario, descripcion, fecha_recepcion AS fechaRecepcion, estado, prioridad, canal_recepcion AS canalRecepcion, fecha_resolucion AS fechaResolucion FROM tickets";
+    $query = "SELECT id_ticket AS idTicket, id_cliente AS idCliente, id_usuario AS idUsuario, descripcion, fecha_recepcion AS fechaRecepcion, estado, prioridad, canal_recepcion AS canalRecepcion, fecha_resolucion AS fechaResolucion FROM Tickets";
     if ($userData['puesto'] === 'tecnico') {
         $query .= " WHERE id_usuario = ?";
     }
