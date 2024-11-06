@@ -1,23 +1,10 @@
 <?php
 
 require 'db.php';
-use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
-
-// Obtiene la clave secreta desde las variables de entorno de Railway
-$key = $_ENV['JWT_SECRET_KEY'];
-
-// Función para verificar el token JWT y obtener los datos del usuario
-function verificarTokenTicket($jwt)
-{
-    global $key;
-    try {
-        $decoded = JWT::decode($jwt, new Key($key, 'HS256'));
-        return (array) $decoded->user;
-    } catch (Exception $e) {
-        return null;
-    }
-}
+require_once 'enums/ticketCanalRecepcion.php';
+require_once 'enums/ticketEstados.php';
+require_once 'enums/ticketPrioridad.php';
+require_once './utils/verificarTokenUser.php';
 
 // Función para obtener los tickets del usuario autenticado
 function obtenerTickets()
@@ -34,7 +21,7 @@ function obtenerTickets()
 
     // Extraer el token del header 'Authorization'
     $token = str_replace('Bearer ', '', $headers['Authorization']);
-    $userData = verificarTokenTicket($token);
+    $userData = verificarTokenUser($token);
 
     if (!$userData) {
         http_response_code(401);
@@ -43,9 +30,9 @@ function obtenerTickets()
     }
 
     // Generar la consulta SQL para obtener los tickets
-    $query = "SELECT * FROM tickets";
+    $query = "SELECT id_ticket AS idTicket, id_cliente AS idCliente, id_usuario AS idUsuario, descripcion, fecha_recepcion AS fechaRecepcion, estado, prioridad, canal_recepcion AS canalRecepcion, fecha_resolucion AS fechaResolucion FROM tickets";
     if ($userData['puesto'] === 'tecnico') {
-        $query .= " WHERE tecnico_asignado_id = ?";
+        $query .= " WHERE id_usuario = ?";
     }
     $query .= " LIMIT 20";
 
@@ -56,7 +43,7 @@ function obtenerTickets()
         $stmt->execute();
     }
 
-    $tickets = $stmt->fetchAll();
+    $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Verificar si hay tickets y devolver la respuesta
     if (!$tickets) {
@@ -66,15 +53,35 @@ function obtenerTickets()
     }
 }
 
+
 function agregarTicket()
 {
     global $pdo;
+
+    $headers = apache_request_headers();
+    if (!isset($headers['Authorization'])) {
+        // Si no se proporciona el token, devolvemos un código 401 (Unauthorized).
+        http_response_code(401);
+        echo json_encode(['error' => 'Token no proporcionado']);
+        return;
+    }
+
+    // Extraemos el token del header 'Authorization', eliminando el prefijo 'Bearer '.
+    $token = str_replace('Bearer ', '', $headers['Authorization']);
+
+    $userData = verificarTokenUser($token);
+    if (!$userData) {
+        // Si el token es inválido o ha expirado, devolvemos un código 401.
+        http_response_code(401);
+        echo json_encode(['error' => 'Token inválido o expirado']);
+        return;
+    }
 
     // Leer y decodificar JSON del cuerpo de la solicitud
     $data = json_decode(file_get_contents("php://input"), true);
 
     // Validar datos requeridos
-    if (!isset($data['id_cliente'], $data['id_usuario'], $data['descripcion'], $data['prioridad'], $data['canalRecepcion'])) {
+    if (!isset($data['idCliente'], $userData['idUsuario'], $data['descripcion'], $data['prioridad'], $data['canalRecepcion'])) {
         http_response_code(400);
         echo json_encode(['error' => 'Todos los campos son obligatorios']);
         return;
@@ -82,14 +89,19 @@ function agregarTicket()
 
     // Preparar y ejecutar la consulta de inserción
     $stmt = $pdo->prepare('INSERT INTO Tickets (id_cliente, id_usuario, descripcion, estado, prioridad, canal_recepcion, fecha_resolucion) VALUES (?, ?, ?, ?, ?, ?, ?)');
-    $estado = 'Abierto';
-    $fechaResolucion = ($estado === 'Resuelto') ? date("Y-m-d H:i:s") : null;
+    $estado = TicketEstados::ABIERTO->value;
+    $fechaResolucion = ($estado === TicketEstados::RESUELTO->value) ? date("Y-m-d H:i:s") : null;
 
-    $stmt->execute([$data['id_cliente'], $data['id_usuario'], $data['descripcion'], $estado, $data['prioridad'], $data['canalRecepcion'], $fechaResolucion]);
+    $stmt->execute([$data['idCliente'], $userData['idUsuario'], $data['descripcion'], $estado, $data['prioridad'], $data['canalRecepcion'], $fechaResolucion]);
 
     // Verificar si la inserción fue exitosa
     if ($stmt->rowCount() > 0) {
-        echo json_encode(['success' => 'Ticket creado exitosamente', 'id_ticket' => $pdo->lastInsertId()]);
+        $idTicket = $pdo->lastInsertId();
+        $stmt = $pdo->prepare("SELECT id_ticket as idTicket, id_cliente as idCliente, id_usuario as idUsuario, descripcion, fecha_recepcion as fechaRecepcion, estado, prioridad, canal_recepcion as canalRecepcion, fecha_resolucion as fechaResolucion FROM tickets WHERE id_ticket = ?");
+        $stmt->execute([$idTicket]);
+        $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        echo json_encode(['success' => 'Ticket creado exitosamente', 'ticket' => $ticket]);
     } else {
         http_response_code(500);
         echo json_encode(['error' => 'Error al crear el ticket']);

@@ -45,8 +45,6 @@ if ($uri === '/auth/register' && $method === 'POST') {
 } elseif ($uri === '/me' && $method === 'GET') {
     // Llama al método de obtener datos del usuario autenticado cuando la ruta es /me y el método es GET
     obtenerDatosProtegidos();
-} elseif ($method === 'DELETE' && preg_match('/\/usuarios\/(\d+)/', $uri, $matches)) {
-    eliminarUsuario($matches[1]);
 } elseif ($uri === '/tickets' && $method === 'GET') {
     // Obtener todos los tickets
     obtenerTickets();

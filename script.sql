@@ -26,4 +26,4 @@ CREATE TABLE Tickets (
     fecha_resolucion DATETIME,
     FOREIGN KEY (id_cliente) REFERENCES Clientes(id_cliente),
     FOREIGN KEY (id_usuario) REFERENCES Usuarios(id_usuario)
-);
+); 

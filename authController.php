@@ -2,10 +2,10 @@
 
 // Exportamos el archivo de conexión a la base de datos, permitiéndonos interactuar con las tablas de usuarios.
 require 'db.php';
+require_once './utils/verificarTokenUser.php';
 
 // Importamos las librerías necesarias para trabajar con JSON Web Tokens (JWT) en PHP.
 use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
 
 // Definimos una clave secreta para firmar y verificar tokens JWT.
 // Esta clave es crucial para la seguridad del sistema y debe mantenerse segura.
@@ -127,21 +127,6 @@ function login()
     ]);
 }
 
-// Función para verificar la validez del token JWT recibido en el header de la solicitud.
-function verificarTokenUser($jwt)
-{
-    global $key; // Incluimos la clave secreta para JWT.
-
-    try {
-        // Decodificamos el token usando la clave y el algoritmo HS256 para obtener los datos originales.
-        $decoded = JWT::decode($jwt, new Key($key, 'HS256'));
-        return (array) $decoded->user; // Devolvemos los datos del usuario si el token es válido.
-    } catch (Exception $e) {
-        // Si el token es inválido o ha expirado, devolvemos null para indicar un error de autenticación.
-        return null;
-    }
-}
-
 // Función para obtener datos de usuario protegido por autenticación JWT
 function obtenerDatosProtegidos()
 {
@@ -184,34 +169,3 @@ function obtenerDatosProtegidos()
     echo json_encode($user);
 }
 
-function eliminarUsuario($id)
-{
-    global $pdo; // Accedemos al objeto PDO para interactuar con la base de datos.
-
-    // Comprobamos si el ID del usuario a eliminar es un número válido.
-    if (!is_numeric($id)) {
-        http_response_code(400); // Código 400 para petición incorrecta.
-        echo json_encode(['error' => 'ID de usuario inválido']);
-        return;
-    }
-
-    // Preparamos la consulta para eliminar al usuario.
-    $stmt = $pdo->prepare('DELETE FROM Usuarios WHERE id_usuario = ?');
-    
-    // Ejecutamos la consulta con el ID proporcionado.
-    if ($stmt->execute([$id])) {
-        // Verificamos si se eliminó algún registro.
-        if ($stmt->rowCount() > 0) {
-            http_response_code(204); // Código 204 No Content si se eliminó el usuario correctamente.
-            return;
-        } else {
-            http_response_code(404); // Código 404 si no se encontró al usuario.
-            echo json_encode(['error' => 'Usuario no encontrado']);
-            return;
-        }
-    } else {
-        http_response_code(500); // Código 500 para error interno del servidor.
-        echo json_encode(['error' => 'Error al eliminar el usuario']);
-        return;
-    }
-}
