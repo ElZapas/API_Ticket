@@ -21,6 +21,7 @@ function obtenerTickets()
     $token = str_replace('Bearer ', '', $headers['Authorization']);
     $userData = verificarTokenUser($token);
 
+
     if (!$userData) {
         http_response_code(401);
         echo json_encode(['error' => 'Token inválido o expirado']);
@@ -80,6 +81,13 @@ function agregarTicket()
     if (!$userData) {
         http_response_code(401);
         echo json_encode(['error' => 'Token inválido o expirado']);
+        return;
+    }
+
+    // Verificar que el usuario sea "Responsable"
+    if ($userData['puesto'] !== PuestoUsuario::RESPONSABLE->value) {
+        http_response_code(403);
+        echo json_encode(['error' => 'Permiso denegado. Solo los usuarios con puesto "Responsable" pueden agregar tickets.']);
         return;
     }
 
@@ -150,27 +158,67 @@ function agregarTicket()
     }
 }
 
-
 function actualizarTicket($id)
 {
     global $pdo;
 
-    // Leer y decodificar JSON del cuerpo de la solicitud
+    $headers = apache_request_headers();
+    if (!isset($headers['Authorization'])) {
+        http_response_code(401);
+        echo json_encode(['error' => 'Token no proporcionado']);
+        return;
+    }
+
+    $token = str_replace('Bearer ', '', $headers['Authorization']);
+    $userData = verificarTokenUser($token);
+    if (!$userData) {
+        http_response_code(401);
+        echo json_encode(['error' => 'Token inválido o expirado']);
+        return;
+    }
+
+    // Verificar que el usuario sea "Responsable"
+    if ($userData['puesto'] !== PuestoUsuario::RESPONSABLE->value) {
+        http_response_code(403);
+        echo json_encode(['error' => 'Permiso denegado. Solo los usuarios con puesto "Responsable" pueden actualizar tickets.']);
+        return;
+    }
+
     $data = json_decode(file_get_contents("php://input"), true);
 
-    // Validar datos requeridos
-    if (!isset($data['descripcion'], $data['estado'], $data['prioridad'], $data['canalRecepcion'])) {
+    if (!isset($data['nombreCliente'], $data['nombreUsuario'], $data['descripcion'], $data['prioridad'], $data['canalRecepcion'])) {
         http_response_code(400);
         echo json_encode(['error' => 'Todos los campos son obligatorios']);
         return;
     }
 
-    // Preparar y ejecutar la consulta de actualización
-    $stmt = $pdo->prepare('UPDATE Tickets SET descripcion = ?, estado = ?, prioridad = ?, canal_recepcion = ?, fecha_resolucion = ? WHERE id_ticket = ?');
-    $fechaResolucion = ($data['estado'] === 'Resuelto') ? date("Y-m-d H:i:s") : null;
-    $stmt->execute([$data['descripcion'], $data['estado'], $data['prioridad'], $data['canalRecepcion'], $fechaResolucion, $id]);
+    // Obtener el id_cliente a partir del nombreCliente
+    $stmt = $pdo->prepare("SELECT id_cliente FROM Clientes WHERE nombre_cliente = ?");
+    $stmt->execute([$data['nombreCliente']]);
+    $idCliente = $stmt->fetchColumn();
 
-    // Verificar si la actualización fue exitosa
+    if (!$idCliente) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Cliente no encontrado']);
+        return;
+    }
+
+    // Obtener el id_usuario a partir del nombreUsuario
+    $stmt = $pdo->prepare("SELECT id_usuario FROM Usuarios WHERE nombre_usuario = ?");
+    $stmt->execute([$data['nombreUsuario']]);
+    $idUsuarioAsignado = $stmt->fetchColumn();
+
+    if (!$idUsuarioAsignado) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Usuario técnico no encontrado']);
+        return;
+    }
+
+    $stmt = $pdo->prepare('UPDATE Tickets SET id_cliente = ?, id_usuario = ?, descripcion = ?, estado = ?, prioridad = ?, canal_recepcion = ?, fecha_resolucion = ? WHERE id_ticket = ?');
+    $fechaResolucion = ($data['estado'] === TicketEstados::RESUELTO->value) ? date("Y-m-d H:i:s") : null;
+    $estado = $data['estado'] ?? 'Abierto';
+    $stmt->execute([$idCliente, $idUsuarioAsignado, $data['descripcion'], $estado, $data['prioridad'], $data['canalRecepcion'], $fechaResolucion, $id]);
+
     if ($stmt->rowCount() > 0) {
         echo json_encode(['success' => 'Ticket actualizado exitosamente']);
     } else {
@@ -179,16 +227,35 @@ function actualizarTicket($id)
     }
 }
 
-// Función para eliminar un ticket
 function eliminarTicket($id)
 {
     global $pdo;
 
-    // Preparar y ejecutar la consulta de eliminación
+    $headers = apache_request_headers();
+    if (!isset($headers['Authorization'])) {
+        http_response_code(401);
+        echo json_encode(['error' => 'Token no proporcionado']);
+        return;
+    }
+
+    $token = str_replace('Bearer ', '', $headers['Authorization']);
+    $userData = verificarTokenUser($token);
+    if (!$userData) {
+        http_response_code(401);
+        echo json_encode(['error' => 'Token inválido o expirado']);
+        return;
+    }
+
+    // Verificar que el usuario sea "Responsable"
+    if ($userData['puesto'] !== PuestoUsuario::RESPONSABLE->value) {
+        http_response_code(403);
+        echo json_encode(['error' => 'Permiso denegado. Solo los usuarios con puesto "Responsable" pueden eliminar tickets.']);
+        return;
+    }
+
     $stmt = $pdo->prepare('DELETE FROM Tickets WHERE id_ticket = ?');
     $stmt->execute([$id]);
 
-    // Verificar si la eliminación fue exitosa
     if ($stmt->rowCount() > 0) {
         echo json_encode(['success' => 'Ticket eliminado exitosamente']);
     } else {

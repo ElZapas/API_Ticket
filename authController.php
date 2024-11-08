@@ -3,6 +3,7 @@
 // Exportamos el archivo de conexión a la base de datos, permitiéndonos interactuar con las tablas de usuarios.
 require 'db.php';
 require_once './utils/verificarTokenUser.php';
+require_once './enums/puestoUsuario.php';
 
 // Importamos las librerías necesarias para trabajar con JSON Web Tokens (JWT) en PHP.
 use Firebase\JWT\JWT;
@@ -30,9 +31,9 @@ function register()
     }
 
     // Validamos que el valor de 'puesto' sea "responsable" o "tecnico".
-    if (!in_array($data['puesto'], ['responsable', 'tecnico'])) {
+    if (!in_array($data['puesto'], [PuestoUsuario::RESPONSABLE->value, PuestoUsuario::TECNICO->value])) {
         http_response_code(400);
-        echo json_encode(['error' => 'El campo puesto debe ser "responsable" o "tecnico"']);
+        echo json_encode(['error' => 'El campo puesto debe ser "'.PuestoUsuario::RESPONSABLE->value.'" o "'.PuestoUsuario::TECNICO->value.'"']);
         return;
     }
 
@@ -121,8 +122,8 @@ function login()
         'user' => [
             'idUsuario' => $user['id_usuario'],
             'nombreUsuario' => $user['nombre_usuario'],
-            'email' => $user['email'], 
-            'puesto' => $user['puesto'], 
+            'email' => $user['email'],
+            'puesto' => $user['puesto'],
         ]
     ]);
 }
