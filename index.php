@@ -30,6 +30,7 @@ if ($method == "OPTIONS") {
 require 'db.php';
 require 'authController.php';
 require 'ticketController.php';
+require 'userController.php';
 
 // Obtener la ruta solicitada y el método HTTP
 $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
