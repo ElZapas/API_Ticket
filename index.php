@@ -57,6 +57,9 @@ if ($uri === '/auth/register' && $method === 'POST') {
 } elseif ($method === 'DELETE' && preg_match('/\/tickets\/(\d+)/', $uri, $matches)) {
     // Eliminar ticket por ID
     eliminarTicket($matches[1]);
+} elseif ($uri === '/users' && $method === 'GET') {
+    // Obtener la lista de técnicos
+    obtenerTecnicos();
 } else {
     // Devuelve un código de error 404 si la ruta no coincide con las anteriores
     http_response_code(404);
