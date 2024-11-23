@@ -61,6 +61,12 @@ if ($uri === '/auth/register' && $method === 'POST') {
 } elseif ($uri === '/users' && $method === 'GET') {
     // Obtener la lista de técnicos
     obtenerTecnicos();
+} elseif ($uri === '/tickets/filtrar/estado' && $method === 'POST') {
+    // Nuevo endpoint para filtrar tickets por estado
+    filtrarTicketsPorEstado();
+} elseif ($uri === '/tickets/filtrar/prioridad' && $method === 'POST') {
+    // Nuevo endpoint para filtrar tickets por prioridad
+    filtrarTicketsPorPrioridad();
 } else {
     // Devuelve un código de error 404 si la ruta no coincide con las anteriores
     http_response_code(404);

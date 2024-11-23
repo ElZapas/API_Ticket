@@ -263,3 +263,120 @@ function eliminarTicket($id)
         echo json_encode(['error' => 'Ticket no encontrado']);
     }
 }
+
+function filtrarTicketsPorEstado()
+{
+    global $pdo;
+
+    $headers = apache_request_headers();
+    if (!isset($headers['Authorization'])) {
+        http_response_code(401);
+        echo json_encode(['error' => 'Token no proporcionado']);
+        return;
+    }
+
+    $token = str_replace('Bearer ', '', $headers['Authorization']);
+    $userData = verificarTokenUser($token);
+
+    if (!$userData) {
+        http_response_code(401);
+        echo json_encode(['error' => 'Token inválido o expirado']);
+        return;
+    }
+
+    // Validar estado en la solicitud
+    $estadoPermitidos = [ticketEstados::ABIERTO->value, ticketEstados::CERRADO->value];
+    $data = json_decode(file_get_contents("php://input"), true);
+
+    if (!isset($data['estado']) || !in_array($data['estado'], $estadoPermitidos)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Estado inválido. Solo se permiten "Abierto" o "Cerrado".']);
+        return;
+    }
+
+    $query = "
+        SELECT 
+            t.id_ticket AS idTicket,
+            c.nombre_cliente AS nombreCliente,
+            u.nombre_usuario AS nombreUsuario,
+            t.descripcion,
+            t.fecha_recepcion AS fechaRecepcion,
+            t.estado,
+            t.prioridad,
+            t.canal_recepcion AS canalRecepcion,
+            t.fecha_resolucion AS fechaResolucion
+        FROM Tickets t
+        JOIN Usuarios u ON t.id_usuario = u.id_usuario
+        JOIN Clientes c ON t.id_cliente = c.id_cliente
+        WHERE t.estado = ?
+    ";
+
+    $stmt = $pdo->prepare($query);
+    $stmt->execute([$data['estado']]);
+    $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    if (!$tickets) {
+        echo json_encode(['mensaje' => 'No se encontraron tickets con el estado especificado.']);
+    } else {
+        echo json_encode($tickets);
+    }
+}
+
+function filtrarTicketsPorPrioridad()
+{
+    global $pdo;
+
+    $headers = apache_request_headers();
+    if (!isset($headers['Authorization'])) {
+        http_response_code(401);
+        echo json_encode(['error' => 'Token no proporcionado']);
+        return;
+    }
+
+    $token = str_replace('Bearer ', '', $headers['Authorization']);
+    $userData = verificarTokenUser($token);
+
+    if (!$userData) {
+        http_response_code(401);
+        echo json_encode(['error' => 'Token inválido o expirado']);
+        return;
+    }
+
+    // Validar prioridad en la solicitud
+    $prioridadesPermitidas = array_map(fn($p) => $p->value, TicketPrioridad::cases());
+    $data = json_decode(file_get_contents("php://input"), true);
+
+    if (!isset($data['prioridad']) || !in_array($data['prioridad'], $prioridadesPermitidas)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Prioridad inválida. Valores permitidos: ' . implode(', ', $prioridadesPermitidas)]);
+        return;
+    }
+
+    $query = "
+        SELECT 
+            t.id_ticket AS idTicket,
+            c.nombre_cliente AS nombreCliente,
+            u.nombre_usuario AS nombreUsuario,
+            t.descripcion,
+            t.fecha_recepcion AS fechaRecepcion,
+            t.estado,
+            t.prioridad,
+            t.canal_recepcion AS canalRecepcion,
+            t.fecha_resolucion AS fechaResolucion
+        FROM Tickets t
+        JOIN Usuarios u ON t.id_usuario = u.id_usuario
+        JOIN Clientes c ON t.id_cliente = c.id_cliente
+        WHERE t.prioridad = ?
+    ";
+
+    $stmt = $pdo->prepare($query);
+    $stmt->execute([$data['prioridad']]);
+    $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    if (!$tickets) {
+        echo json_encode(['mensaje' => 'No se encontraron tickets con la prioridad especificada.']);
+    } else {
+        echo json_encode($tickets);
+    }
+}
+
