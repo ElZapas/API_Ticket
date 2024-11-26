@@ -48,7 +48,7 @@ if ($uri === '/auth/register' && $method === 'POST') {
     obtenerDatosProtegidos();
 } elseif ($uri === '/tickets' && $method === 'GET') {
     // Obtener todos los tickets
-    obtenerTickets();
+    obtenerTickets($_GET);
 } elseif ($uri === '/tickets' && $method === 'POST') {
     // Agregar un nuevo ticket
     agregarTicket();
@@ -61,8 +61,7 @@ if ($uri === '/auth/register' && $method === 'POST') {
 } elseif ($uri === '/users' && $method === 'GET') {
     // Obtener la lista de técnicos
     obtenerTecnicos();
-} elseif ($uri === '/tickets/estado' && $method === 'GET') {
-    // Filtra tickets por estado
+/* } elseif ($uri === '/tickets/estado' && $method === 'GET') {
     $estado = $_GET['estado'] ?? null;
     if (!$estado) {
         http_response_code(400);
@@ -71,14 +70,13 @@ if ($uri === '/auth/register' && $method === 'POST') {
         filtrarTicketsPorEstado($estado);
     }
 } elseif ($uri === '/tickets/prioridad' && $method === 'GET') {
-    // Filtra tickets por prioridad
     $prioridad = $_GET['prioridad'] ?? null;
     if (!$prioridad) {
         http_response_code(400);
         echo json_encode(['error' => 'Debe especificar el parámetro "prioridad"']);
     } else {
         filtrarTicketsPorPrioridad($prioridad);
-    }
+    } */
 } else {
     // Devuelve un código de error 404 si la ruta no coincide con las anteriores
     http_response_code(404);

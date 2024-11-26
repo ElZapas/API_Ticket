@@ -7,7 +7,7 @@ require_once 'enums/ticketPrioridad.php';
 require_once './utils/verificarTokenUser.php';
 
 // Función para obtener los tickets del usuario autenticado
-function obtenerTickets()
+function obtenerTickets($get)
 {
     global $pdo;
 
@@ -28,6 +28,9 @@ function obtenerTickets()
         return;
     }
 
+    $estado = $get['estado'] ?? null;
+    $prioridad = $get['prioridad'] ?? null;
+
     $query = "
         SELECT 
             t.id_ticket AS idTicket,
@@ -44,17 +47,36 @@ function obtenerTickets()
         JOIN Clientes c ON t.id_cliente = c.id_cliente
     ";
 
-    if ($userData['puesto'] === 'tecnico') {
-        $query .= " WHERE t.id_usuario = ?";
+    $params = [
+        'puesto' => $userData['puesto'] === PuestoUsuario::TECNICO->value ? $userData['puesto'] : null,
+        'prioridad' => $get['prioridad'] ?? null,
+        'estado' => $get['estado'] ?? null,
+    ];
+    
+    $conditions = [];
+    $values = [];
+    
+    if (!empty($params['puesto']) && $userData['puesto'] === PuestoUsuario::TECNICO->value) {
+        $conditions[] = "t.id_usuario = ?";
+        $values[] = $params['puesto'];
     }
+    if (!empty($params['prioridad'])) {
+        $conditions[] = "t.prioridad = ?";
+        $values[] = $params['prioridad'];
+    }
+    if (!empty($params['estado'])) {
+        $conditions[] = "t.estado = ?";
+        $values[] = $params['estado'];
+    }
+    if (!empty($conditions)) {
+        $query .= " WHERE " . implode(" AND ", $conditions);
+    }
+
     $query .= " LIMIT 20";
 
-    $stmt = $pdo->prepare($query);
-    if ($userData['puesto'] === 'tecnico') {
-        $stmt->execute([$userData['idUsuario']]);
-    } else {
-        $stmt->execute();
-    }
+    $stmt = $pdo->prepare(query: $query);
+    
+    $stmt->execute($values);
 
     $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -130,7 +152,7 @@ function agregarTicket()
 
     if ($stmt->rowCount() > 0) {
         $idTicket = $pdo->lastInsertId();
-        
+
         // Obtener el ticket recién creado con nombres de usuario y cliente
         $stmt = $pdo->prepare("
             SELECT 
@@ -265,7 +287,7 @@ function eliminarTicket($id)
 }
 
 // Filtrar tickets por estado (solo acepta "Abierto" o "Cerrado")
-function filtrarTicketsPorEstado($estado)
+/* function filtrarTicketsPorEstado($estado)
 {
     global $pdo;
 
@@ -377,5 +399,5 @@ function filtrarTicketsPorPrioridad($prioridad)
     } else {
         echo json_encode($tickets);
     }
-}
+} */
 
