@@ -264,7 +264,8 @@ function eliminarTicket($id)
     }
 }
 
-function filtrarTicketsPorEstado()
+// Filtrar tickets por estado (solo acepta "Abierto" o "Cerrado")
+function filtrarTicketsPorEstado($estado)
 {
     global $pdo;
 
@@ -284,13 +285,10 @@ function filtrarTicketsPorEstado()
         return;
     }
 
-    // Validar estado en la solicitud
-    $estadoPermitidos = [ticketEstados::ABIERTO->value, ticketEstados::CERRADO->value];
-    $data = json_decode(file_get_contents("php://input"), true);
-
-    if (!isset($data['estado']) || !in_array($data['estado'], $estadoPermitidos)) {
+    // Validar que el estado es permitido
+    if (!in_array($estado, [TicketEstados::ABIERTO->value, TicketEstados::CERRADO->value])) {
         http_response_code(400);
-        echo json_encode(['error' => 'Estado inválido. Solo se permiten "Abierto" o "Cerrado".']);
+        echo json_encode(['error' => 'Estado no permitido. Solo se aceptan "Abierto" o "Cerrado".']);
         return;
     }
 
@@ -312,17 +310,19 @@ function filtrarTicketsPorEstado()
     ";
 
     $stmt = $pdo->prepare($query);
-    $stmt->execute([$data['estado']]);
+    $stmt->execute([$estado]);
+
     $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     if (!$tickets) {
-        echo json_encode(['mensaje' => 'No se encontraron tickets con el estado especificado.']);
+        echo json_encode(['mensaje' => 'No se encontraron tickets con el estado especificado']);
     } else {
         echo json_encode($tickets);
     }
 }
 
-function filtrarTicketsPorPrioridad()
+// Filtrar tickets por prioridad (acepta todas las prioridades)
+function filtrarTicketsPorPrioridad($prioridad)
 {
     global $pdo;
 
@@ -342,13 +342,11 @@ function filtrarTicketsPorPrioridad()
         return;
     }
 
-    // Validar prioridad en la solicitud
-    $prioridadesPermitidas = array_map(fn($p) => $p->value, TicketPrioridad::cases());
-    $data = json_decode(file_get_contents("php://input"), true);
-
-    if (!isset($data['prioridad']) || !in_array($data['prioridad'], $prioridadesPermitidas)) {
+    // Validar que la prioridad es válida
+    $prioridadesValidas = array_column(TicketPrioridad::cases(), 'value');
+    if (!in_array($prioridad, $prioridadesValidas)) {
         http_response_code(400);
-        echo json_encode(['error' => 'Prioridad inválida. Valores permitidos: ' . implode(', ', $prioridadesPermitidas)]);
+        echo json_encode(['error' => 'Prioridad no válida']);
         return;
     }
 
@@ -370,11 +368,12 @@ function filtrarTicketsPorPrioridad()
     ";
 
     $stmt = $pdo->prepare($query);
-    $stmt->execute([$data['prioridad']]);
+    $stmt->execute([$prioridad]);
+
     $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     if (!$tickets) {
-        echo json_encode(['mensaje' => 'No se encontraron tickets con la prioridad especificada.']);
+        echo json_encode(['mensaje' => 'No se encontraron tickets con la prioridad especificada']);
     } else {
         echo json_encode($tickets);
     }
