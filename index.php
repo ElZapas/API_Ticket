@@ -61,22 +61,12 @@ if ($uri === '/auth/register' && $method === 'POST') {
 } elseif ($uri === '/users' && $method === 'GET') {
     // Obtener la lista de técnicos
     obtenerTecnicos();
-/* } elseif ($uri === '/tickets/estado' && $method === 'GET') {
-    $estado = $_GET['estado'] ?? null;
-    if (!$estado) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Debe especificar el parámetro "estado"']);
-    } else {
-        filtrarTicketsPorEstado($estado);
-    }
-} elseif ($uri === '/tickets/prioridad' && $method === 'GET') {
-    $prioridad = $_GET['prioridad'] ?? null;
-    if (!$prioridad) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Debe especificar el parámetro "prioridad"']);
-    } else {
-        filtrarTicketsPorPrioridad($prioridad);
-    } */
+} elseif ($uri === '/users' && $method === 'POST') {
+    // Llama al método de agregar técnico cuando la ruta es /users y el método es POST
+    agregarTecnico();
+} elseif ($method === 'PUT' && preg_match('/\/users\/(\d+)/', $uri, $matches)) {
+    // Llama al método de editar técnico por ID cuando la ruta es /users/{id} y el método es PUT
+    editarTecnico($matches[1]);
 } else {
     // Devuelve un código de error 404 si la ruta no coincide con las anteriores
     http_response_code(404);
