@@ -21,7 +21,6 @@ function obtenerTickets($get)
     $token = str_replace('Bearer ', '', $headers['Authorization']);
     $userData = verificarTokenUser($token);
 
-
     if (!$userData) {
         http_response_code(401);
         echo json_encode(['error' => 'Token inválido o expirado']);
@@ -30,6 +29,7 @@ function obtenerTickets($get)
 
     $estado = $get['estado'] ?? null;
     $prioridad = $get['prioridad'] ?? null;
+    $tecnico = $get['tecnico'] ?? null;
 
     $query = "
         SELECT 
@@ -47,35 +47,42 @@ function obtenerTickets($get)
         JOIN Clientes c ON t.id_cliente = c.id_cliente
     ";
 
-    $params = [
-        'puesto' => $userData['puesto'] === PuestoUsuario::TECNICO->value ? $userData['puesto'] : null,
-        'prioridad' => $get['prioridad'] ?? null,
-        'estado' => $get['estado'] ?? null,
-    ];
-    
     $conditions = [];
     $values = [];
-    
-    if (!empty($params['puesto']) && $userData['puesto'] === PuestoUsuario::TECNICO->value) {
-        $conditions[] = "t.id_usuario = ?";
-        $values[] = $params['puesto'];
+
+    // Filtro por técnico
+    if (!empty($tecnico)) {
+        $conditions[] = "u.nombre_usuario = ?";
+        $values[] = $tecnico;
     }
-    if (!empty($params['prioridad'])) {
-        $conditions[] = "t.prioridad = ?";
-        $values[] = $params['prioridad'];
-    }
-    if (!empty($params['estado'])) {
+
+    // Filtro por estado
+    if (!empty($estado)) {
         $conditions[] = "t.estado = ?";
-        $values[] = $params['estado'];
+        $values[] = $estado;
     }
+
+    // Filtro por prioridad
+    if (!empty($prioridad)) {
+        $conditions[] = "t.prioridad = ?";
+        $values[] = $prioridad;
+    }
+
+    // Filtro por usuario técnico (si aplica)
+    if ($userData['puesto'] === PuestoUsuario::TECNICO->value) {
+        $conditions[] = "t.id_usuario = ?";
+        $values[] = $userData['id_usuario'];
+    }
+
+    // Construcción de la consulta con condiciones
     if (!empty($conditions)) {
         $query .= " WHERE " . implode(" AND ", $conditions);
     }
 
     $query .= " LIMIT 20";
 
-    $stmt = $pdo->prepare(query: $query);
-    
+    // Preparar y ejecutar la consulta
+    $stmt = $pdo->prepare($query);
     $stmt->execute($values);
 
     $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
