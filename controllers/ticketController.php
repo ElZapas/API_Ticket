@@ -259,11 +259,7 @@ function actualizarTicket()
     $stmt->execute([$data['nombreUsuario']]);
     $idUsuarioAsignado = $stmt->fetchColumn();
 
-    if (!$idUsuarioAsignado) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Usuario técnico no encontrado']);
-        return;
-    }
+    if (!$idUsuarioAsignado) HttpResponses::Bad_Request(['error' => 'Usuario técnico no encontrado']);
 
     $stmt = $pdo->prepare(
         'UPDATE 

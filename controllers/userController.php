@@ -34,6 +34,7 @@ function obtenerTecnicos()
         email, 
         fecha_creacion AS fechaCreacion 
             FROM usuarios 
+            WHERE activo = true
                 WHERE puesto = ?"
     );
     $stmt->execute([PuestoUsuario::TECNICO->value]);
