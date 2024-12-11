@@ -1,6 +1,5 @@
 <?php
 
-use cache\CacheController;
 use enums\PuestoUsuario;
 use enums\TicketEstados;
 use src\Database\Database;
