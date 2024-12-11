@@ -35,7 +35,7 @@ function obtenerTecnicos()
         fecha_creacion AS fechaCreacion 
             FROM usuarios 
             WHERE activo = true
-                WHERE puesto = ?"
+            AND puesto = ?"
     );
     $stmt->execute([PuestoUsuario::TECNICO->value]);
 
