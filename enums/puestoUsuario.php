@@ -1,7 +1,9 @@
 <?php
 
-enum PuestoUsuario : string {
+namespace enums;
+
+enum PuestoUsuario: string
+{
     case RESPONSABLE = 'responsable';
     case TECNICO = 'tecnico';
-
-}
+};

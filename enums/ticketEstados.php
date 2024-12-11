@@ -1,4 +1,8 @@
 <?php
+
+namespace enums;
+
+
 enum TicketEstados: string {
     case ABIERTO = 'Abierto';
     case EN_PROCESO = 'En Proceso';
