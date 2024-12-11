@@ -1,4 +1,5 @@
 <?php
+
 use utils\ApiResource;
 use utils\HttpResponses;
 use utils\Request;
@@ -56,7 +57,7 @@ $pathController = @ROUTERS[Request::$URI_ARR[0]] ?? false;
 
 if (!$pathController)
     // HttpResponses::Bad_Request($_SERVER);
-    HttpResponses::Bad_Request("Recurso no encontrado");
+    HttpResponses::Not_Found("Recurso no encontrado");
 
 $controller = require_once $pathController;
 if ($controller instanceof ApiResource) {
