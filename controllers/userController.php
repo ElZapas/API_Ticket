@@ -14,9 +14,17 @@ return new ApiResource(
             resources: fn() => obtenerTecnicos(),
         ),
         new ApiResource(
-            method: "DELETE",
             verification: fn() => isset(Request::$URI_ARR[1]),
-            resources: fn() => deshabilitarTecnico(),
+            resources: [
+                new ApiResource(
+                    method: "DELETE",
+                    resources: fn() => deshabilitarTecnico(),
+                ),
+                new ApiResource(
+                    method: "PUT",
+                    resources: fn() => actualizarTecnico(),
+                ),
+            ]
         )
     ]
 );
@@ -35,7 +43,7 @@ function obtenerTecnicos()
     }
 
     // Consulta para obtener los usuarios técnicos
-    $stmt = $pdo->prepare(
+    $query = $pdo->prepare(
         "SELECT 
         id_usuario AS idUsuario, 
         nombre_usuario AS nombreUsuario, 
@@ -45,9 +53,9 @@ function obtenerTecnicos()
             WHERE activo = true
             AND puesto = ?"
     );
-    $stmt->execute([PuestoUsuario::TECNICO->value]);
+    $query->execute([PuestoUsuario::TECNICO->value]);
 
-    $tecnicos = $stmt->fetchAll();
+    $tecnicos = $query->fetchAll();
 
     HttpResponses::OK(
         $tecnicos ? $tecnicos :
@@ -82,4 +90,51 @@ function deshabilitarTecnico()
     $query->rowCount() == 1 ?
         HttpResponses::OK("Tecnico Deshabilitado") :
         HttpResponses::Bad_Request("Tecnico no encontrado o ya esta deshabilitado");
+}
+
+function actualizarTecnico()
+{
+    // ruta : users/{id del tecnico a eliminar}
+    // requiere token dentro del header
+    // metodo : DELETE
+    $userData = JWTHelper::getUser();
+
+    // Verificar que el usuario sea "Responsable"
+    if ($userData->puesto !== PuestoUsuario::RESPONSABLE->value)
+        HttpResponses::Forbidden(
+            ['error' => 'Permiso denegado. Solo los usuarios con puesto "responsable" pueden actualizar tecnicos.']
+        );
+
+    $data = Request::$POST;
+
+    if (!isset($data['nombreUsuario'], $data['email']))
+        HttpResponses::Bad_Request(['error' => 'Faltan campos']);
+
+    $idTecnico = (int)Request::$URI_ARR[1];
+    $pdo = Database::connection();
+    $query = $pdo->prepare(
+        "UPDATE usuarios
+            SET 
+            nombre_usuario = ?,
+            email = ?
+                WHERE id_usuario = ?
+                AND puesto != 'responsable'
+                AND activo = true
+                    LIMIT 1
+                "
+    );
+
+    $query->execute([
+        $data['nombreUsuario'],
+        $data['email'],
+        $idTecnico,
+    ]);
+
+    if ($query->rowCount() > 0) {
+        HttpResponses::OK(['success' => 'Usuario actualizado exitosamente']);
+    } else {
+        HttpResponses::Bad_Request(
+            ['error' => 'Usuario no encontrado o no se realizaron cambios']
+        );
+    }
 }
