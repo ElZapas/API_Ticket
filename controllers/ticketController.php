@@ -176,7 +176,15 @@ function agregarTicket()
     $estado = TicketEstados::ABIERTO->value;
     $fechaResolucion = ($estado === TicketEstados::RESUELTO->value) ? date("Y-m-d H:i:s") : null;
 
-    $stmt->execute([$idCliente, $idUsuarioAsignado, $data['descripcion'], $estado, $data['prioridad'], $data['canalRecepcion'], $fechaResolucion]);
+    $stmt->execute([
+        $idCliente,
+        $idUsuarioAsignado,
+        $data['descripcion'],
+        $estado,
+        $data['prioridad'],
+        $data['canalRecepcion'],
+        $fechaResolucion
+    ]);
 
     if ($stmt->rowCount() > 0) {
         $idTicket = $pdo->lastInsertId();

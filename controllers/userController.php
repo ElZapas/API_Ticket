@@ -143,14 +143,15 @@ function actualizarTecnico()
     }
 }
 
-function actualizarPassword()
+function agregarTecnico()
 {
-    // ruta : users/{id del tecnico a eliminar}
+    // ruta : users
     // requiere token dentro del header
-    // metodo : PUT
+    // metodo : POST
     // body:{
     //  nombreUsuario,
-    //  email
+    //  email,
+    //  tecnico,
     //}
     $userData = JWTHelper::getUser();
 
@@ -162,31 +163,37 @@ function actualizarPassword()
 
     $data = Request::$POST;
 
-    if (!isset($data['password'], $data['email']))
+    if (!isset(
+        $data['nombreUsuario'],
+        $data['email'],
+        $data['puesto'],
+        $data['password']
+    ))
         HttpResponses::Bad_Request(['error' => 'Faltan campos']);
 
-    $idTecnico = (int)Request::$URI_ARR[1];
     $pdo = Database::connection();
     $query = $pdo->prepare(
-        "UPDATE usuarios
-            SET 
-            nombre_usuario = ?,
-            email = ?
-                WHERE id_usuario = ?
-                AND puesto != 'responsable'
-                AND activo = true
-                    LIMIT 1
-                "
+        "INSERT INTO usuarios (
+        nombre_usuario,
+        email,
+        puesto,
+        password
+        ) VALUES (?,?,?,?)"
     );
 
     $query->execute([
         $data['nombreUsuario'],
         $data['email'],
-        $idTecnico,
+        $data['puesto'],
+        $data['password']
     ]);
+    $idAgregado = $query->fetchColumn();
 
-    if ($query->rowCount() > 0) {
-        HttpResponses::OK(['success' => 'Usuario actualizado exitosamente']);
+    if ($idAgregado) {
+        HttpResponses::OK([
+            'success' => 'Usuario actualizado exitosamente',
+            'tecnico' => $idAgregado,
+        ]);
     } else {
         HttpResponses::Bad_Request(
             ['error' => 'Usuario no encontrado o no se realizaron cambios']
