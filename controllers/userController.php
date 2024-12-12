@@ -142,3 +142,54 @@ function actualizarTecnico()
         );
     }
 }
+
+function actualizarPassword()
+{
+    // ruta : users/{id del tecnico a eliminar}
+    // requiere token dentro del header
+    // metodo : PUT
+    // body:{
+    //  nombreUsuario,
+    //  email
+    //}
+    $userData = JWTHelper::getUser();
+
+    // Verificar que el usuario sea "Responsable"
+    if ($userData->puesto !== PuestoUsuario::RESPONSABLE->value)
+        HttpResponses::Forbidden(
+            ['error' => 'Permiso denegado. Solo los usuarios con puesto "responsable" pueden actualizar tecnicos.']
+        );
+
+    $data = Request::$POST;
+
+    if (!isset($data['password'], $data['email']))
+        HttpResponses::Bad_Request(['error' => 'Faltan campos']);
+
+    $idTecnico = (int)Request::$URI_ARR[1];
+    $pdo = Database::connection();
+    $query = $pdo->prepare(
+        "UPDATE usuarios
+            SET 
+            nombre_usuario = ?,
+            email = ?
+                WHERE id_usuario = ?
+                AND puesto != 'responsable'
+                AND activo = true
+                    LIMIT 1
+                "
+    );
+
+    $query->execute([
+        $data['nombreUsuario'],
+        $data['email'],
+        $idTecnico,
+    ]);
+
+    if ($query->rowCount() > 0) {
+        HttpResponses::OK(['success' => 'Usuario actualizado exitosamente']);
+    } else {
+        HttpResponses::Bad_Request(
+            ['error' => 'Usuario no encontrado o no se realizaron cambios']
+        );
+    }
+}

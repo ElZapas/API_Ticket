@@ -9,7 +9,7 @@ require 'vendor/autoload.php';
 spl_autoload_register(function ($class) {
     $class_path = str_replace('\\', DIRECTORY_SEPARATOR, $class);
 
-    $file =  $_SERVER["DOCUMENT_ROOT"] . $class_path . '.php';
+    $file =  $_SERVER["DOCUMENT_ROOT"] . DIRECTORY_SEPARATOR. $class_path . '.php';
     // if (file_exists($file)) require_once $file;
     // echo json_encode($file);
     require_once $file;
