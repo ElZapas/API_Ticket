@@ -47,10 +47,14 @@ class ApiResource
                     $this->error = $resource->process(false);
                 }
             } else {
-                $this->error = call_user_func($this->resources);
+                $this->error = call_user_func($this->resources) ?? self::NO_ERROR;
             }
         };
         if ($mainProcess && $this->error !== self::NO_ERROR) $this->sendError();
+        else if($mainProcess && $this->error === self::NO_ERROR)
+        {
+            HttpResponses::Internal_Error("ocurrio un error");
+        }
         return $this->error;
     }
 }

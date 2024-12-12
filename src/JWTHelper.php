@@ -18,8 +18,8 @@ class JWTHelper
         string $key = null
     ): array|null {
 
-        try {
-            if (self::$TOKEN === null) {
+        if (self::$TOKEN === null) {
+            try {
                 self::$TOKEN = (array) JWT::decode(
                     $token ?? Request::$TOKEN,
                     new Key(
@@ -27,11 +27,13 @@ class JWTHelper
                         'HS256'
                     )
                 );
+            } catch (\Firebase\JWT\ExpiredException $e) {
+                HttpResponses::Unauthorized("token ha expirado");
+            } catch (\Exception $e) {
+                HttpResponses::Unauthorized("token invalido");
             }
-            return self::$TOKEN;
-        } catch (\Exception $e) {
-            return null;
         }
+        return self::$TOKEN;
     }
 
     static final function tokenIsNull(bool $critic = false): bool
