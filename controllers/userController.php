@@ -96,7 +96,11 @@ function actualizarTecnico()
 {
     // ruta : users/{id del tecnico a eliminar}
     // requiere token dentro del header
-    // metodo : DELETE
+    // metodo : PUT
+    // body:{
+    //  nombreUsuario,
+    //  email
+    //}
     $userData = JWTHelper::getUser();
 
     // Verificar que el usuario sea "Responsable"
