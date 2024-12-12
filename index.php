@@ -62,6 +62,8 @@ if (!$pathController)
 $controller = require_once $pathController;
 if ($controller instanceof ApiResource) {
     $controller->process();
+}else{
+    HttpResponses::Internal_Error("Error al procesar la solicitud");
 }
 
 // if ($uri === '/users' && $method === 'GET') {

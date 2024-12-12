@@ -67,12 +67,12 @@ function deshabilitarTecnico()
     // ruta : users/{id del tecnico a eliminar}
     // requiere token dentro del header
     // metodo : DELETE
+    $db = Database::connection();
     $userData = JWTHelper::getUser();
     if ($userData->puesto !== PuestoUsuario::RESPONSABLE->value)
         HttpResponses::Unauthorized("Recurso autorizado solo para tecnicos");
 
     $idTecnico = (int)Request::$URI_ARR[1];
-    $db = Database::connection();
     $query = $db->prepare(
         "UPDATE usuarios 
             SET activo = false
