@@ -20,10 +20,10 @@ class Database
                     'DB_USER' => $user,
                     'DB_PASSWORD' => $pass,
                     'DB_PORT' => $port,
-                    'DB_CHARSET' => $charset
+                    
                 ] = $_ENV;
 
-                $dsn = "mysql:host=$host;port=$port;dbname=$db;charset=$charset";
+                $dsn = "mysql:host=$host;port=$port;dbname=$db;";
 
 
                 $options = [

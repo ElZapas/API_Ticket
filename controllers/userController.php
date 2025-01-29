@@ -14,6 +14,10 @@ return new ApiResource(
             resources: fn() => obtenerTecnicos(),
         ),
         new ApiResource(
+            method: "POST",
+            resources: fn() => agregarTecnico(),
+        ),
+        new ApiResource(
             verification: fn() => isset(Request::$URI_ARR[1]),
             resources: [
                 new ApiResource(
@@ -59,7 +63,7 @@ function obtenerTecnicos()
 
     HttpResponses::OK(
         $tecnicos ? $tecnicos :
-            ['mensaje' => 'No se encontraron técnicos registrados']
+        ['mensaje' => 'No se encontraron técnicos registrados']
     );
 }
 function deshabilitarTecnico()
@@ -72,7 +76,7 @@ function deshabilitarTecnico()
     if ($userData->puesto !== PuestoUsuario::RESPONSABLE->value)
         HttpResponses::Unauthorized("Recurso autorizado solo para tecnicos");
 
-    $idTecnico = (int)Request::$URI_ARR[1];
+    $idTecnico = (int) Request::$URI_ARR[1];
     $query = $db->prepare(
         "UPDATE usuarios 
             SET activo = false
@@ -114,7 +118,7 @@ function actualizarTecnico()
     if (!isset($data['nombreUsuario'], $data['email']))
         HttpResponses::Bad_Request(['error' => 'Faltan campos']);
 
-    $idTecnico = (int)Request::$URI_ARR[1];
+    $idTecnico = (int) Request::$URI_ARR[1];
     $pdo = Database::connection();
     $query = $pdo->prepare(
         "UPDATE usuarios
@@ -122,19 +126,20 @@ function actualizarTecnico()
             nombre_usuario = ?,
             email = ?
                 WHERE id_usuario = ?
-                AND puesto != 'responsable'
+                AND puesto = ?
                 AND activo = true
                     LIMIT 1
                 "
     );
 
-    $query->execute([
+    $resultado = $query->execute([
         $data['nombreUsuario'],
         $data['email'],
         $idTecnico,
+        PuestoUsuario::TECNICO->value
     ]);
 
-    if ($query->rowCount() > 0) {
+    if ($resultado) {
         HttpResponses::OK(['success' => 'Usuario actualizado exitosamente']);
     } else {
         HttpResponses::Bad_Request(
@@ -163,12 +168,13 @@ function agregarTecnico()
 
     $data = Request::$POST;
 
-    if (!isset(
+    if (
+        !isset(
         $data['nombreUsuario'],
         $data['email'],
-        $data['puesto'],
         $data['password']
-    ))
+    )
+    )
         HttpResponses::Bad_Request(['error' => 'Faltan campos']);
 
     $pdo = Database::connection();
@@ -181,22 +187,22 @@ function agregarTecnico()
         ) VALUES (?,?,?,?)"
     );
 
-    $query->execute([
+    $resultado = $query->execute([
         $data['nombreUsuario'],
         $data['email'],
-        $data['puesto'],
-        $data['password']
+        PuestoUsuario::TECNICO->value,
+        password_hash($data['password'], PASSWORD_DEFAULT)
     ]);
-    $idAgregado = $query->fetchColumn();
 
-    if ($idAgregado) {
+
+    if ($resultado) {
         HttpResponses::OK([
-            'success' => 'Usuario actualizado exitosamente',
-            'tecnico' => $idAgregado,
+            'success' => 'Usuario agregado exitosamente',
+            'tecnico' => $resultado,
         ]);
     } else {
         HttpResponses::Bad_Request(
-            ['error' => 'Usuario no encontrado o no se realizaron cambios']
+            ['error' => 'Hubo un error al agregar un usuario']
         );
     }
 }
